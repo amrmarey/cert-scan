@@ -8,12 +8,17 @@
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 [![TLS](https://img.shields.io/badge/transport-TLS%2FSSL-6366F1?style=for-the-badge&logoColor=white)](https://en.wikipedia.org/wiki/Transport_Layer_Security)
 [![Export](https://img.shields.io/badge/export-CSV-217346?style=for-the-badge&logo=microsoftexcel&logoColor=white)](#output-and-export)
+[![GitHub repo](https://img.shields.io/badge/GitHub-amrmarey%2Fcert--scan-181717?style=for-the-badge&logo=github)](https://github.com/amrmarey/cert-scan)
 
 <br />
 
 **Pull cert metadata** (issuer, serial, days left) **from every target** — then **drop results to disk** for spreadsheets or dashboards.
 
 <sub>Built for quick inventories & expiry checks — not a full PKI / pen-test story.</sub>
+
+<br />
+
+[**github.com/amrmarey/cert-scan**](https://github.com/amrmarey/cert-scan) · `git clone https://github.com/amrmarey/cert-scan.git`
 
 </div>
 
@@ -35,6 +40,7 @@
 | 📄 | [Input file](#input-file) |
 | 📤 | [Output and export](#output-and-export) |
 | 🔒 | [Security and caveats](#security-and-caveats) |
+| 🤝 | [Contributing](#contributing) |
 | 📜 | [License](#license) |
 
 <br />
@@ -73,7 +79,7 @@ Pick **one** mode per run:
 ## 🚀 Quick start
 
 ```powershell
-cd D:\Projects\cert-scan
+cd <path-to>\cert-scan
 ```
 
 <details open>
@@ -168,7 +174,7 @@ www.example.com
 **Custom CSV path:**
 
 ```powershell
-.\Scan-CertRange.ps1 -IPListFile .\asset_ip_add.txt -CsvPath D:\Reports\last-scan.csv
+.\Scan-CertRange.ps1 -IPListFile .\asset_ip_add.txt -CsvPath .\reports\last-scan.csv
 ```
 
 ---
@@ -186,6 +192,17 @@ www.example.com
 
 ---
 
+## 🤝 Contributing
+
+Maintained by **Amr Marey**. Contributions, issues, and pull requests are welcome on the public repo:
+
+**[https://github.com/amrmarey/cert-scan](https://github.com/amrmarey/cert-scan)**
+
+- **Contact:** [amr.marey@msn.com](mailto:amr.marey@msn.com)  
+- **Clone:** `git clone https://github.com/amrmarey/cert-scan.git`
+
+---
+
 ## 📜 License
 
 Use and adapt for your organization **as needed**. **No warranty** implied.
@@ -198,6 +215,6 @@ Use and adapt for your organization **as needed**. **No warranty** implied.
 
 **Made for operators who want answers in a spreadsheet — fast.**
 
-🔐 · 📊 · ⚡
+🔐 · 📊 · ⚡ · [`amrmarey/cert-scan`](https://github.com/amrmarey/cert-scan)
 
 </div>
