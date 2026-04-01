@@ -1,0 +1,9 @@
+# One IPv4/IPv6 address or DNS hostname (FQDN) per line. Blank lines and # comments are ignored.
+# IPv6 literals may use brackets, e.g. [2001:db8::1]
+192.168.1.1
+192.168.1.2
+10.0.0.50
+google.com
+www.msn.com
+192.168.108.134
+www.yahoo.com

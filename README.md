@@ -61,7 +61,7 @@ Pick **one** mode per run:
 
 | Mode | When to use |
 |------|-------------|
-| **📂 File** | **IPs**, **IPv6**, **FQDNs** — one per line in `asset_ip_add.txt` (or any path you pass) |
+| **📂 File** | **IPs**, **IPv6**, **FQDNs** — one per line in `asset_list.txt` (or any path you pass) |
 | **🔢 Range** | Contiguous **IPv4** only: **`-StartIP`** through **`-EndIP`** |
 
 ---
@@ -85,10 +85,10 @@ cd <path-to>\cert-scan
 <details open>
 <summary><strong>📂 File mode</strong> <em>(recommended — IPs, IPv6, FQDNs)</em></summary>
 
-Edit **`asset_ip_add.txt`**, then:
+Edit **`asset_list.txt`**, then:
 
 ```powershell
-.\Scan-CertRange.ps1 -IPListFile .\asset_ip_add.txt
+.\Scan-CertRange.ps1 -IPListFile .\asset_list.txt
 ```
 
 </details>
@@ -106,7 +106,7 @@ Edit **`asset_ip_add.txt`**, then:
 <summary><strong>🔓 Execution policy blocked?</strong></summary>
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Scan-CertRange.ps1 -IPListFile .\asset_ip_add.txt
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Scan-CertRange.ps1 -IPListFile .\asset_list.txt
 ```
 
 On **PowerShell 7**, you can swap `powershell` for `pwsh`.
@@ -149,7 +149,7 @@ On **PowerShell 7**, you can swap `powershell` for `pwsh`.
 
 ## 📄 Input file
 
-**`asset_ip_add.txt`** (or any path you pass to **`-IPListFile`**):
+**`asset_list.txt`** (or any path you pass to **`-IPListFile`**):
 
 | Rule |  |
 |------|--|
@@ -178,7 +178,7 @@ www.example.com
 **Custom path:**
 
 ```powershell
-.\Scan-CertRange.ps1 -IPListFile .\asset_ip_add.txt -CsvPath .\reports\last-scan.csv
+.\Scan-CertRange.ps1 -IPListFile .\asset_list.txt -CsvPath .\reports\last-scan.csv
 ```
 
 ---
