@@ -6,3 +6,4 @@
 google.com
 www.msn.com
 192.168.108.134
+www.yahoo.com
