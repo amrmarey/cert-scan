@@ -1,7 +1,0 @@
-﻿"Asset_IP_Add","Cert_Issuer","Serial_Number","Days_Remaining","Error"
-"192.168.1.1","N/A","N/A","N/A","Connection timed out."
-"192.168.1.2","N/A","N/A","N/A","Exception calling ""EndConnect"" with ""1"" argument(s): ""No connection could be made because the target machine actively refused it 192.168.1.2:443"""
-"10.0.0.50","N/A","N/A","N/A","Connection timed out."
-"google.com","CN=Kaspersky Anti-Virus Personal Root Certificate, O=AO Kaspersky Lab","420000003369CD92E5","181",""
-"www.msn.com","CN=Kaspersky Anti-Virus Personal Root Certificate, O=AO Kaspersky Lab","420000003469CD9415","181",""
-"192.168.108.134","CN=Kaspersky Anti-Virus Personal Root Certificate, O=AO Kaspersky Lab","420000003E69CD95E9","181",""

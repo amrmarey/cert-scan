@@ -1,7 +1,0 @@
-﻿"Asset_IP_Add","Cert_Issuer","Serial_Number","Days_Remaining","Error"
-"192.168.1.1","N/A","N/A","N/A","Connection timed out."
-"192.168.1.2","N/A","N/A","N/A","Exception calling ""EndConnect"" with ""1"" argument(s): ""No connection could be made because the target machine actively refused it 192.168.1.2:443"""
-"10.0.0.50","N/A","N/A","N/A","Connection timed out."
-"google.com","CN=WR2, O=Google Trust Services, C=US","009D9CEE3B14D1DD6110CCA16D24CEE82F","60",""
-"www.msn.com","CN=Microsoft TLS G2 ECC CA OCSP 02, O=Microsoft Corporation, C=US","5700001C6D8AAE2ACFA3E7E574000000001C6D","309",""
-"192.168.108.134","E=support@fortinet.com, CN=FGVMEVTBYO3PEUE0, OU=Certificate Authority, O=Fortinet, L=Sunnyvale, S=California, C=US","2FE35524283C472F","824",""
