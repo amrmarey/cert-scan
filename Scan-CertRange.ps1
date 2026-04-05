@@ -78,6 +78,40 @@ function Get-TargetListFromFile {
     }
 }
 
+function Get-CertificateSerialDecimal {
+    # SerialNumber = big-endian hex (openssl-style). Fallback: GetSerialNumber() LE bytes.
+    param([System.Security.Cryptography.X509Certificates.X509Certificate2]$Cert)
+
+    $inv = [System.Globalization.CultureInfo]::InvariantCulture
+    $hex = ($Cert.SerialNumber -replace '[^0-9A-Fa-f]', '').ToUpperInvariant()
+    if ([string]::IsNullOrWhiteSpace($hex)) {
+        return '0'
+    }
+    if ($hex.Length % 2 -eq 1) {
+        $hex = '0' + $hex
+    }
+
+    try {
+        return [System.Numerics.BigInteger]::Parse(
+            $hex,
+            [System.Globalization.NumberStyles]::AllowHexSpecifier,
+            $inv
+        ).ToString($inv)
+    }
+    catch {
+        $bytes = $Cert.GetSerialNumber()
+        if ($bytes.Length -eq 0) {
+            return '0'
+        }
+        if ($bytes[$bytes.Length - 1] -band 0x80) {
+            $tmp = New-Object byte[] ($bytes.Length + 1)
+            [Array]::Copy($bytes, $tmp, $bytes.Length)
+            $bytes = $tmp
+        }
+        return ([System.Numerics.BigInteger]::new($bytes)).ToString($inv)
+    }
+}
+
 function Get-CertInfo {
     param(
         [string]$AssetLabel,
@@ -109,7 +143,7 @@ function Get-CertInfo {
         return [pscustomobject]@{
             Asset_IP_Add   = $AssetLabel
             Cert_Issuer    = $cert.Issuer
-            Serial_Number  = $cert.SerialNumber
+            Serial_Number  = Get-CertificateSerialDecimal -Cert $cert
             Days_Remaining = [int](New-TimeSpan -Start (Get-Date) -End $cert.NotAfter).Days
             Error          = ''
         }
@@ -146,6 +180,25 @@ $results = foreach ($t in $targets) {
     Get-CertInfo -AssetLabel $t.AssetLabel -ConnectHost $t.ConnectHost -TlsHostName $t.TlsHostName -Port $Port -Timeout $Timeout
 }
 
+# Excel treats long digit strings as numbers → scientific notation. Emit ="digits" so the cell stays text.
+function Format-SerialForExcelCsv {
+    param([string]$Serial)
+    if ($Serial -match '^\d+$') {
+        return '="' + $Serial + '"'
+    }
+    return $Serial
+}
+
+$csvRows = foreach ($r in $results) {
+    [pscustomobject]@{
+        Asset_IP_Add   = $r.Asset_IP_Add
+        Cert_Issuer    = $r.Cert_Issuer
+        Serial_Number  = (Format-SerialForExcelCsv -Serial ([string]$r.Serial_Number))
+        Days_Remaining = $r.Days_Remaining
+        Error          = $r.Error
+    }
+}
+
 $csvOut = if ($CsvPath) {
     $CsvPath
 }
@@ -154,7 +207,7 @@ else {
     Join-Path $dir ('cert-scan-{0:yyyyMMdd-HHmmss}.csv' -f (Get-Date))
 }
 
-$results | Export-Csv -LiteralPath $csvOut -NoTypeInformation -Encoding utf8
+$csvRows | Export-Csv -LiteralPath $csvOut -NoTypeInformation -Encoding utf8
 Write-Host "CSV: $csvOut"
 
 $results | Format-Table -AutoSize
