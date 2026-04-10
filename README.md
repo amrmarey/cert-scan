@@ -1,5 +1,3 @@
-
-
 # 🔐 cert-scan
 
 ### *TLS certificate inventory — IP ranges, host lists, one CSV.*
@@ -11,27 +9,13 @@
 [GitHub](https://github.com/amrmarey/cert-scan)
 [Stars](https://github.com/amrmarey/cert-scan/stargazers)
 
-  
-
-
 **Pull cert metadata** (issuer, serial, days to expiry) **from each target** — **print a table** and **write a timestamped CSV** next to the script.
 
 Built for inventories and expiry sweeps — not a substitute for a full PKI audit or pentest.
 
-  
-
-
 **[github.com/amrmarey/cert-scan](https://github.com/amrmarey/cert-scan)** · `git clone https://github.com/amrmarey/cert-scan.git`
 
-
-
-  
-
-
-> **TL;DR** — Put IPs or hostnames in a text file → run `**Scan-CertRange.ps1*`* → get `**cert-scan-*.csv**` plus a console summary.
-
-  
-
+> **TL;DR** — Put IPs or hostnames in a text file → run `**Scan-CertRange.ps1`** → get `**cert-scan-*.csv*`* plus a console summary.
 
 ## Jump to
 
@@ -48,9 +32,6 @@ Built for inventories and expiry sweeps — not a substitute for a full PKI audi
 | 🔒  | [Security and caveats](#security-and-caveats) |
 | 🤝  | [Contributing](#contributing)                 |
 | 📜  | [License](#license)                           |
-
-
-  
 
 
 ---
@@ -72,7 +53,7 @@ Pick **one** mode per run:
 | Mode         | When to use                                                                            |
 | ------------ | -------------------------------------------------------------------------------------- |
 | **📂 File**  | **IPs**, **IPv6**, **FQDNs** — one per line in `asset_list.txt` (or any path you pass) |
-| **🔢 Range** | Contiguous **IPv4** only: `**-StartIP`** through `**-EndIP**`                          |
+| **🔢 Range** | Contiguous **IPv4** only: `**-StartIP`** through `**-EndIP`**                          |
 
 
 ---
@@ -103,15 +84,11 @@ Edit `**asset_list.txt`**, then:
 .\Scan-CertRange.ps1 -IPListFile .\asset_list.txt
 ```
 
-
-
 **🔢 Range mode** *(IPv4 sweep only)*
 
 ```powershell
 .\Scan-CertRange.ps1 -StartIP 192.168.1.1 -EndIP 192.168.1.50
 ```
-
-
 
 **🔓 Execution policy blocked?**
 
@@ -121,25 +98,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Scan-CertRange.ps1 -IPList
 
 On **PowerShell 7**, you can swap `powershell` for `pwsh`.
 
-
-
 ---
 
 ## ✨ Features
-
-
 
 
 |     | Capability                                                       | ✓   |
 | --- | ---------------------------------------------------------------- | --- |
 | 🎯  | **Targets** — IPv4, IPv6, bracketed IPv6, DNS names from a list  | ✅   |
 | 📡  | **Range mode** — single contiguous IPv4 stretch                  | ✅   |
-| 🔌  | `**-Port`** — default `**443**`, any TCP port                    | ✅   |
+| 🔌  | `**-Port`** — default `**443`**, any TCP port                    | ✅   |
 | 📊  | **Auto CSV** — `cert-scan-yyyyMMdd-HHmmss.csv` beside the script | ✅   |
 | 🧾  | `**-CsvPath`** — choose your own output path                     | ✅   |
-| 🛡️ | Failures become rows with `**N/A**` and an `**Error**` column    | ✅   |
-
-
+| 🛡️ | Failures become rows with `**N/A`** and an `**Error**` column    | ✅   |
 
 
 ---
@@ -157,13 +128,13 @@ On **PowerShell 7**, you can swap `powershell` for `pwsh`.
 | `**-CsvPath`**    | —           | *(auto)* | Explicit CSV path; omit for timestamped file |
 
 
-> Use **either** `**-StartIP*`* + `**-EndIP**` **or** `**-IPListFile`** — not both.
+> Use **either** `**-StartIP*`* + `**-EndIP`** **or** `**-IPListFile`** — not both.
 
 ---
 
 ## 📄 Input file
 
-`**asset_list.txt**` (or any path you pass to `**-IPListFile**`):
+`**asset_list.txt`** (or any path you pass to `**-IPListFile**`):
 
 
 | Rule      |                                      |
@@ -190,7 +161,7 @@ www.example.com
 | Channel     | What you get                                                                                                                                                                                     |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Console** | Columns: `Asset_IP_Add`, `Cert_Issuer`, `Serial_Number`, `Days_Remaining`, `Error`                                                                                                               |
-| **CSV**     | UTF-8, no type row (`Export-Csv -NoTypeInformation`); run ends with `CSV: <full path>`. `**Serial_Number`** is written as `**="…"**` so **Excel** shows full decimals (not scientific notation). |
+| **CSV**     | UTF-8, no type row (`Export-Csv -NoTypeInformation`); run ends with `CSV: <full path>`. `**Serial_Number`** is written as `**="…"`** so **Excel** shows full decimals (not scientific notation). |
 
 
 **Custom path:**
@@ -230,7 +201,7 @@ www.example.com
 
 Pull requests are welcome — especially docs, edge cases, and safer defaults (without breaking simple “inventory mode”).
 
-**Self-check:** run `**.\Validate-CertScan.ps1`** from the repo folder. It asserts that `**Serial_Number**` matches an independent TLS fetch (hex parse equals little-endian byte math), checks **CSV** columns, and verifies the **N/A + Error** shape when a connection fails.
+**Self-check:** run `**.\Validate-CertScan.ps1`** from the repo folder. It asserts that `**Serial_Number`** matches an independent TLS fetch (hex parse equals little-endian byte math), checks **CSV** columns, and verifies the **N/A + Error** shape when a connection fails.
 
 ---
 
@@ -240,19 +211,11 @@ Use and adapt for your organization **as needed**. **No warranty** implied.
 
 ---
 
-
-
-  
-
-
 ### *Scan the fleet. Ship the spreadsheet.*
 
 **Made for operators who want answers in a spreadsheet — fast.**
 
 Not another pane to babysit — a **CSV you can filter, pivot, and attach to a ticket.**
-
-  
-
 
 
 | 🔐                | 📊                     | ⚡                            |
@@ -260,13 +223,6 @@ Not another pane to babysit — a **CSV you can filter, pivot, and attach to a t
 | **TLS** inventory | **CSV** out of the box | **One** `.ps1`, no installer |
 
 
-  
-
-
 `**[amrmarey/cert-scan](https://github.com/amrmarey/cert-scan)`**
 
 Clone · aim at targets · export · done.
-
-  
-
-
