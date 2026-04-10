@@ -1,2 +1,3 @@
 # Scan exports
 *.csv
+Scan-CertRange-temp.ps1
