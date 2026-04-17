@@ -47,13 +47,11 @@ flowchart LR
 
 
 
-Pick **one** mode per run:
+The script runs in **file mode** only:
 
-
-| Mode         | When to use                                                                            |
+| Mode         | Input                                                                                  |
 | ------------ | -------------------------------------------------------------------------------------- |
-| **📂 File**  | **IPs**, **IPv6**, **FQDNs** — one per line in `asset_list.txt` (or any path you pass) |
-| **🔢 Range** | Contiguous **IPv4** only: `**-StartIP`** through `**-EndIP`**                          |
+| **📂 File**  | **IPs** (IPv4 & IPv6), **FQDNs** — one per line in `asset_list.txt` (or any path you pass) |
 
 
 ---
@@ -76,18 +74,12 @@ Pick **one** mode per run:
 cd <path-to>\cert-scan
 ```
 
-**📂 File mode** *(recommended — IPs, IPv6, FQDNs)*
+**📂 File mode** *(IPs, IPv6, FQDNs)*
 
 Edit `**asset_list.txt`**, then:
 
 ```powershell
 .\Scan-CertRange.ps1 -IPListFile .\asset_list.txt
-```
-
-**🔢 Range mode** *(IPv4 sweep only)*
-
-```powershell
-.\Scan-CertRange.ps1 -StartIP 192.168.1.1 -EndIP 192.168.1.50
 ```
 
 **🔓 Execution policy blocked?**
@@ -106,7 +98,6 @@ On **PowerShell 7**, you can swap `powershell` for `pwsh`.
 |     | Capability                                                       | ✓   |
 | --- | ---------------------------------------------------------------- | --- |
 | 🎯  | **Targets** — IPv4, IPv6, bracketed IPv6, DNS names from a list  | ✅   |
-| 📡  | **Range mode** — single contiguous IPv4 stretch                  | ✅   |
 | 🔌  | `**-Port`** — default `**443`**, any TCP port                    | ✅   |
 | 📊  | **Auto CSV** — `cert-scan-yyyyMMdd-HHmmss.csv` beside the script | ✅   |
 | 🧾  | `**-CsvPath`** — choose your own output path                     | ✅   |
@@ -118,17 +109,12 @@ On **PowerShell 7**, you can swap `powershell` for `pwsh`.
 ## 🧰 CLI reference
 
 
-| Switch            | Required in | Default  | What it does                                 |
-| ----------------- | ----------- | -------- | -------------------------------------------- |
-| `**-StartIP**`    | Range       | —        | First IPv4 in range                          |
-| `**-EndIP**`      | Range       | —        | Last IPv4 in range                           |
-| `**-IPListFile**` | File        | —        | Path to target list                          |
-| `**-Port**`       | —           | `443`    | TCP port                                     |
-| `**-Timeout**`    | —           | `3000`   | Connect wait (**milliseconds**)              |
-| `**-CsvPath`**    | —           | *(auto)* | Explicit CSV path; omit for timestamped file |
-
-
-> Use **either** `**-StartIP*`* + `**-EndIP`** **or** `**-IPListFile`** — not both.
+| Switch            | Required | Default  | What it does                                 |
+| ----------------- | -------- | -------- | -------------------------------------------- |
+| `**-IPListFile**` | Yes      | —        | Path to target list (required)               |
+| `**-Port**`       | No       | `443`    | TCP port                                     |
+| `**-Timeout**`    | No       | `3000`   | Connect wait (**milliseconds**)              |
+| `**-CsvPath`**    | No       | *(auto)* | Explicit CSV path; omit for timestamped file |
 
 ---
 
@@ -160,8 +146,8 @@ www.example.com
 
 | Channel     | What you get                                                                                                                                                                                     |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Console** | Columns: `Asset_IP_Add`, `Cert_Issuer`, `Serial_Number`, `Days_Remaining`, `Error`                                                                                                               |
-| **CSV**     | UTF-8, no type row (`Export-Csv -NoTypeInformation`); run ends with `CSV: <full path>`. `**Serial_Number`** is written as `**="…"`** so **Excel** shows full decimals (not scientific notation). |
+| **Console** | Columns: `Asset_IP_Add`, `Port`, `HTTPS`, `Cert_Issuer`, `Serial_Number`, `Days_Remaining`, `Expiry_Status`, `Error`                                                                            |
+| **CSV**     | UTF-8, no type row (`Export-Csv -NoTypeInformation`); includes all columns. `**Serial_Number`** is written as `**="…"`** so **Excel** shows full decimals (not scientific notation).                |
 
 
 **Custom path:**
@@ -201,7 +187,17 @@ www.example.com
 
 Pull requests are welcome — especially docs, edge cases, and safer defaults (without breaking simple “inventory mode”).
 
-**Self-check:** run `**.\Validate-CertScan.ps1`** from the repo folder. It asserts that `**Serial_Number`** matches an independent TLS fetch (hex parse equals little-endian byte math), checks **CSV** columns, and verifies the **N/A + Error** shape when a connection fails.
+**Output columns** created for each target:
+
+- **Asset_IP_Add** — hostname or IP from the list
+- **Port** — TCP port used (default 443)
+- **HTTPS** — "Yes" if certificate retrieved, "No" if connection failed
+- **Cert_Issuer** — issuer DN from the certificate (or N/A on error)
+- **Serial_Number** — certificate serial in decimal format (Excel-safe)
+- **Days_Remaining** — days until `NotAfter` date (or N/A on error)
+- **Expiry_Date** — certificate expiry timestamp
+- **Expiry_Status** — **Healthy** (>90 days), **Warning** (30–89 days), **Critical** (<30 days), or **Expired**
+- **Error** — connection or TLS error message (empty on success)
 
 ---
 
