@@ -123,21 +123,27 @@ On **PowerShell 7**, you can swap `powershell` for `pwsh`.
 `**asset_list.txt`** (or any path you pass to `**-IPListFile**`):
 
 
-| Rule      |                                      |
-| --------- | ------------------------------------ |
-| Lines     | **One** IP or hostname per line      |
-| Blank     | Ignored                              |
-| `#`       | Comment to end of line               |
-| Bad lines | **Warning** in console, line skipped |
+| Rule      |                                                                           |
+| --------- | ------------------------------------------------------------------------- |
+| Lines     | **One** IP or hostname per line                                           |
+| Blank     | Ignored                                                                   |
+| `#`       | Comment to end of line                                                    |
+| Port      | Optional: append `:port` to override default (e.g., `1.2.3.4:8000`)      |
+| Bad lines | **Warning** in console, line skipped                                      |
 
 
 ```text
 # Example
 192.168.1.10
-192.168.1.11
+192.168.1.11:8443
 www.example.com
-[2001:db8::80]
+[2001:db8::80]:9443
 ```
+
+**Port behavior:**
+
+- No port specified → uses `-Port` parameter (default `443`)
+- Port specified in line (e.g., `1.2.3.4:8000`) → overrides the parameter for that target
 
 ---
 
@@ -204,6 +210,8 @@ Pull requests are welcome — especially docs, edge cases, and safer defaults (w
 ## 📜 License
 
 Use and adapt for your organization **as needed**. **No warranty** implied.
+
+> **Note:** This project was shaped with AI assistance, but the vision, direction, and polish are entirely based on vibes — my vibes.
 
 ---
 
