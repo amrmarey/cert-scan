@@ -1,3 +1,5 @@
 # Scan exports
 *.csv
+*.xlsx
+output/
 Scan-CertRange-temp.ps1

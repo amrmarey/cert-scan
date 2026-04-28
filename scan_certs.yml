@@ -1,0 +1,92 @@
+---
+- name: TLS Certificate Inventory Scan
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    asset_list_file: "{{ playbook_dir }}/asset_list.txt"
+    default_port: 443
+    connect_timeout: 3
+    output_dir: "{{ playbook_dir }}/output"
+    report_path: "{{ output_dir }}/cert_scan_{{ now(fmt='%Y%m%d_%H%M%S') }}.xlsx"
+
+  tasks:
+    - name: Ensure output directory exists
+      ansible.builtin.file:
+        path: "{{ output_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Ensure openpyxl is installed
+      ansible.builtin.pip:
+        name: openpyxl
+        state: present
+
+    - name: Read asset list
+      ansible.builtin.slurp:
+        src: "{{ asset_list_file }}"
+      register: asset_list_raw
+
+    - name: Parse asset entries
+      ansible.builtin.set_fact:
+        assets: >-
+          {{ (asset_list_raw.content | b64decode).splitlines()
+             | parse_asset_list(default_port) }}
+
+    - name: Retrieve TLS certificate for each asset
+      community.crypto.get_certificate:
+        host: "{{ item.address }}"
+        port: "{{ item.port }}"
+        timeout: "{{ connect_timeout }}"
+      loop: "{{ assets }}"
+      loop_control:
+        label: "{{ item.address }}:{{ item.port }}"
+      register: cert_results
+      ignore_errors: true
+
+    - name: Build raw scan data
+      ansible.builtin.set_fact:
+        scan_data: >-
+          {{ scan_data | default([]) + [{
+            'address':          item.item.address,
+            'port':             item.item.port,
+            'failed':           item.failed | bool,
+            'issuer':           item.issuer           | default({}),
+            'serial_number':    item.serial_number    | default(0),
+            'subject_alt_name': item.subject_alt_name | default([]),
+            'not_after':        item.not_after        | default(''),
+            'not_before':       item.not_before       | default(''),
+            'msg':              item.msg              | default('')
+          }] }}
+      loop: "{{ cert_results.results }}"
+      loop_control:
+        label: "{{ item.item.address }}:{{ item.item.port }}"
+
+    - name: Save scan data for report generation
+      ansible.builtin.copy:
+        content: "{{ scan_data | to_nice_json }}"
+        dest: "{{ output_dir }}/_scan_data.json"
+
+    - name: Generate XLSX report
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_python_interpreter | default('python3') }}"
+          - "{{ playbook_dir }}/scripts/generate_report.py"
+          - "{{ output_dir }}/_scan_data.json"
+          - "{{ report_path }}"
+      register: report_result
+      changed_when: true
+
+    - name: Remove temporary scan data file
+      ansible.builtin.file:
+        path: "{{ output_dir }}/_scan_data.json"
+        state: absent
+
+    - name: Show certificate summary
+      ansible.builtin.debug:
+        msg: "{{ report_result.stdout_lines }}"
+
+    - name: Show output path
+      ansible.builtin.debug:
+        msg: "Report saved to: {{ report_path }}"
