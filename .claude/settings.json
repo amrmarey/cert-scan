@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wsl -e bash -c \"cat '/mnt/d/Projects/cert-scan-new/cert-scan/output/cert_scan_20260429_002628.csv'\")",
+      "Bash(wsl -e bash -c \"ls /mnt/d/Projects/cert-scan-new/cert-scan/output/\")",
+      "Bash(wsl -e bash -c \"cat '/mnt/d/Projects/cert-scan-new/cert-scan/output/cert_scan_20260429_002627.csv'\")",
+      "Bash(wsl -e bash -c \"cd /mnt/d/Projects/cert-scan-new/cert-scan && ansible-playbook scan_certs.yml -e 'asset_list_file={{ playbook_dir }}/asset_list.txt.example' --tags debug -i localhost, 2>&1\")",
+      "Bash(wsl -e bash -c \"cd /mnt/d/Projects/cert-scan-new/cert-scan && ansible -m community.crypto.get_certificate -a 'host=github.com port=443' localhost 2>&1 | python3 -c \\\\\"import sys,json; d=json.loads\\(sys.stdin.read\\(\\).split\\('=>'\\)[1].strip\\(\\)\\); print\\(json.dumps\\({k:v for k,v in d.items\\(\\) if 'alt' in k.lower\\(\\) or 'san' in k.lower\\(\\)}, indent=2\\)\\)\\\\\"\")",
+      "Bash(wsl -e bash -c \"cd /mnt/d/Projects/cert-scan-new/cert-scan && ansible -m community.crypto.get_certificate -a 'host=github.com port=443' localhost 2>&1 | python3 -c \\\\\"import sys,json; raw=sys.stdin.read\\(\\); d=json.loads\\(raw.split\\('=>',1\\)[1].strip\\(\\)\\); print\\(list\\(d.keys\\(\\)\\)\\)\\\\\"\")",
+      "Bash(wsl -e bash -c \"cd /mnt/d/Projects/cert-scan-new/cert-scan && ansible -m community.crypto.get_certificate -a 'host=github.com port=443' localhost 2>&1 | python3 -c \\\\\"import sys,json; raw=sys.stdin.read\\(\\); d=json.loads\\(raw.split\\('=>',1\\)[1].strip\\(\\)\\); print\\(json.dumps\\(d['extensions'], indent=2\\)\\)\\\\\"\")",
+      "Bash(wsl -e bash -c \"ansible-galaxy collection list community.crypto 2>/dev/null\")",
+      "Bash(wsl -e bash -c \"cd /mnt/d/Projects/cert-scan-new/cert-scan && ansible-playbook scan_certs.yml 2>&1\")",
+      "Bash(wsl -e bash -c \"cat '/mnt/d/Projects/cert-scan-new/cert-scan/output/cert_scan_20260429_003209.csv'\")",
+      "Bash(wsl -e bash -c \"ls /mnt/d/Projects/cert-scan-new/cert-scan/output/ && cat \\\\$\\(ls -t /mnt/d/Projects/cert-scan-new/cert-scan/output/*.csv | head -1\\)\")",
+      "Bash(wsl -e bash -c \"cat \\\\$\\(ls -t /mnt/d/Projects/cert-scan-new/cert-scan/output/*.csv | head -1\\)\")",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"d:\\\\Projects\\\\cert-scan-new\\\\cert-scan\\\\Scan-CertRange.ps1\" -IPListFile \"d:\\\\Projects\\\\cert-scan-new\\\\cert-scan\\\\asset_list.txt\" -Timeout 3000)",
+      "Bash(powershell.exe -NoProfile -Command \"Import-Csv 'D:\\\\Projects\\\\cert-scan-new\\\\cert-scan\\\\cert_scan_20260429_013245.csv' | Select-Object Asset_IP_Add, Port, HTTPS, Subject_Alt_Names, Expiry_Status | Format-Table -AutoSize\")"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ansible-playbook scan_certs.yml)",
+      "Bash(wsl -e bash -c \"cd /mnt/d/Projects/cert-scan-new/cert-scan && ansible-playbook scan_certs.yml\")"
+    ]
+  }
+}
