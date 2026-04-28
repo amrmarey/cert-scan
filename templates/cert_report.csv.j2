@@ -1,0 +1,19 @@
+Asset_IP_Add,Port,HTTPS,Cert_Issuer,Serial_Number,Serial_Hex,Subject_Alt_Names,Days_Remaining,Expiry_Date,Expiry_Status,Error
+{% for r in cert_results.results -%}
+{% set addr = r.item.address -%}
+{% set port = r.item.port | string -%}
+{% if r.failed | bool -%}
+"{{ addr }}",{{ port }},No,N/A,N/A,N/A,N/A,N/A,N/A,N/A,"{{ r.msg | default('Connection failed') | replace('"', '""') }}"
+{% else -%}
+{% set expiry_dt = r.not_after | to_datetime('%Y%m%d%H%M%SZ') -%}
+{% set days = (expiry_dt - now()).days | int -%}
+{% set status = 'Expired' if days < 0 else 'Critical' if days < 30 else 'Warning' if days < 90 else 'Healthy' -%}
+{% set issuer = (r.issuer | default({})).items() | map('join', '=') | join(', ') -%}
+{% set serial = r.serial_number | default(0) | int -%}
+{% set serial_hex = "0x{:X}".format(serial) if serial else 'N/A' -%}
+{% set _info = cert_info_results.results[loop.index0] -%}
+{% set sans = _info.subject_alt_name | default([]) | join('; ') if not (_info.skipped | default(false)) else '' -%}
+{% set expiry_str = expiry_dt.strftime('%Y-%m-%d %H:%M UTC') -%}
+"{{ addr }}",{{ port }},Yes,"{{ issuer | replace('"', '""') }}",{{ serial }},"{{ serial_hex }}","{{ sans | replace('"', '""') }}",{{ days }},"{{ expiry_str }}",{{ status }},""
+{% endif -%}
+{% endfor -%}

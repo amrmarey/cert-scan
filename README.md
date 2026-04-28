@@ -1,6 +1,6 @@
 # 🔐 cert-scan
 
-*TLS certificate inventory — IP ranges, host lists, one spreadsheet.*
+*TLS certificate inventory — IP ranges, host lists, one CSV.*
 
 [Ansible](https://www.ansible.com)
 [Platform](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
@@ -9,13 +9,13 @@
 [GitHub](https://github.com/amrmarey/cert-scan)
 [Stars](https://github.com/amrmarey/cert-scan/stargazers)
 
-**Pull cert metadata** (issuer, serial, SANs, days to expiry) **from each target** — **print a summary table** and **write a timestamped XLSX** with color-coded expiry status.
+**Pull cert metadata** (issuer, serial, SANs, days to expiry) **from each target** — **print a task summary** and **write a timestamped CSV** with expiry status.
 
 Built for inventories and expiry sweeps — not a substitute for a full PKI audit or pentest.
 
 **[github.com/amrmarey/cert-scan](https://github.com/amrmarey/cert-scan)** · `git clone https://github.com/amrmarey/cert-scan.git`
 
-> **TL;DR** — Put IPs or hostnames in `asset_list.txt` → run `ansible-playbook scan_certs.yml` → get a styled `cert_scan_*.xlsx` plus a console summary.
+> **TL;DR** — Put IPs or hostnames in `asset_list.txt` → run `ansible-playbook scan_certs.yml` → get `cert_scan_*.csv`.
 
 ## Jump to
 
@@ -39,28 +39,27 @@ Built for inventories and expiry sweeps — not a substitute for a full PKI audi
 ```mermaid
 flowchart LR
     A["📂 asset_list.txt"] --> B["scan_certs.yml\n(Ansible playbook)"]
-    B --> C["🖥️ Console summary"]
-    B --> D["📊 Styled XLSX report"]
+    B --> C["🖥️ Ansible task output"]
+    B --> D["📄 Timestamped CSV"]
 ```
 
-The playbook runs entirely on `localhost` — no managed nodes needed. Ansible connects directly to each target over TLS using `community.crypto.get_certificate`, then a Python script renders a styled Excel workbook.
+The playbook runs entirely on `localhost` — no managed nodes, no Python scripts, no extra dependencies beyond Ansible itself.
 
 | Step | What happens |
 | ---- | ------------ |
-| **1. Parse** | `asset_list.txt` parsed by a custom filter plugin (supports IPv4, IPv6, FQDNs, per-host port overrides) |
+| **1. Parse** | `asset_list.txt` parsed by a custom filter plugin (IPv4, IPv6, FQDNs, per-host port overrides) |
 | **2. Scan** | `community.crypto.get_certificate` retrieves the TLS cert from each target |
-| **3. Report** | `scripts/generate_report.py` writes a styled XLSX with reverse-DNS lookup and color-coded expiry |
+| **3. Report** | `templates/cert_report.csv.j2` renders a CSV via Jinja2 — no Python script required |
 
 ---
 
 ## 📋 Requirements
 
-|             |                                                                                          |
-| ----------- | ---------------------------------------------------------------------------------------- |
-| **Ansible** | 2.14+ (`ansible-core`) — [install guide](https://docs.ansible.com/ansible/latest/installation_guide/) |
-| **Python**  | 3.8+ with `openpyxl` (`pip install openpyxl`)                                            |
-| **Collection** | `community.crypto >=2.0.0` — installed automatically via `requirements.yml`           |
-| **Network** | Reachable targets on the port you choose (firewall / routing)                            |
+- **Ansible** 2.14+ (`ansible-core`) — [install guide](https://docs.ansible.com/ansible/latest/installation_guide/)
+- **Collection** `community.crypto >=2.0.0` — installed via `requirements.yml`
+- **Network** — reachable targets on the port you choose
+
+No extra Python packages needed.
 
 ---
 
@@ -79,26 +78,20 @@ cd cert-scan
 ansible-galaxy collection install -r requirements.yml -p ./collections
 ```
 
-### 3. Install the Python dependency
-
-```bash
-pip install openpyxl
-```
-
-### 4. Edit your target list
+### 3. Edit your target list
 
 ```bash
 cp asset_list.txt.example asset_list.txt
 # edit asset_list.txt with your IPs / hostnames
 ```
 
-### 5. Run the scan
+### 4. Run the scan
 
 ```bash
 ansible-playbook scan_certs.yml
 ```
 
-The XLSX report is written to `output/cert_scan_<timestamp>.xlsx`.
+The CSV report is written to `output/cert_scan_<timestamp>.csv`.
 
 **Override variables on the command line:**
 
@@ -117,10 +110,9 @@ ansible-playbook scan_certs.yml \
 | --- | --------------------------------------------------------------------------- | --- |
 | 🎯  | **Targets** — IPv4, IPv6 (bracket notation), DNS names, per-host port override | ✅  |
 | 🔌  | `default_port` var — default `443`, any TCP port                            | ✅  |
-| 🏷️  | **Reverse DNS** — PTR hostname resolved for every IP address                | ✅  |
 | 🔑  | **Serial** — decimal *and* hex in separate columns                          | ✅  |
 | 📋  | **SANs** — all Subject Alternative Names captured                           | ✅  |
-| 🎨  | **Styled XLSX** — color-coded expiry, frozen header row, auto-filter        | ✅  |
+| 📄  | **CSV output** — pure Jinja2 template, no Python script or extra packages   | ✅  |
 | 🛡️  | Failures become rows with `N/A` values and an `Error` column                | ✅  |
 | 📁  | Output dir created automatically; report path is timestamped                | ✅  |
 
@@ -135,8 +127,8 @@ Playbook variables (set in `scan_certs.yml` `vars:` block or via `-e`):
 | `asset_list_file`  | `{{ playbook_dir }}/asset_list.txt`        | Path to target list                     |
 | `default_port`     | `443`                                      | TCP port used when not specified inline |
 | `connect_timeout`  | `3`                                        | TLS connect timeout in seconds          |
-| `output_dir`       | `{{ playbook_dir }}/output`                | Directory for XLSX output               |
-| `report_path`      | `{{ output_dir }}/cert_scan_<ts>.xlsx`     | Full path of the generated report       |
+| `output_dir`       | `{{ playbook_dir }}/output`                | Directory for CSV output                |
+| `report_path`      | `{{ output_dir }}/cert_scan_<ts>.csv`      | Full path of the generated report       |
 
 Ansible behavior is controlled by `ansible.cfg`:
 
@@ -179,37 +171,25 @@ www.example.com
 
 ## 📤 Output and export
 
-| Channel     | What you get                                                                                                   |
-| ----------- | -------------------------------------------------------------------------------------------------------------- |
-| **Console** | Summary table: `Asset`, `Hostname`, `Port`, `Status`, `Days`, `Expiry`                                        |
-| **XLSX**    | Styled Excel workbook — frozen header, auto-filter, color-coded `Expiry_Status` column, all columns below     |
+The playbook writes a UTF-8 CSV to `output/cert_scan_<timestamp>.csv`.
 
 **Output columns:**
 
-| Column              | Description                                                                 |
-| ------------------- | --------------------------------------------------------------------------- |
-| `Asset_IP_Add`      | IP or hostname from the input list                                          |
-| `Hostname`          | Reverse-DNS PTR name (IPs only; empty for hostnames)                        |
-| `Port`              | TCP port used                                                               |
-| `HTTPS`             | `Yes` if certificate retrieved, `No` if connection failed                   |
-| `Cert_Issuer`       | Issuer DN from the certificate                                              |
-| `Serial_Number`     | Certificate serial in decimal                                               |
-| `Serial_Hex`        | Certificate serial in hex (`0x…`)                                           |
-| `Subject_Alt_Names` | All SANs, semicolon-separated                                               |
-| `Days_Remaining`    | Days until `NotAfter`                                                       |
-| `Expiry_Date`       | Certificate expiry timestamp (UTC)                                          |
+| Column              | Description                                                                      |
+| ------------------- | -------------------------------------------------------------------------------- |
+| `Asset_IP_Add`      | IP or hostname from the input list                                               |
+| `Port`              | TCP port used                                                                    |
+| `HTTPS`             | `Yes` if certificate retrieved, `No` if connection failed                        |
+| `Cert_Issuer`       | Issuer DN from the certificate                                                   |
+| `Serial_Number`     | Certificate serial in decimal                                                    |
+| `Serial_Hex`        | Certificate serial in hex (`0x…`)                                                |
+| `Subject_Alt_Names` | All SANs, semicolon-separated                                                    |
+| `Days_Remaining`    | Days until `NotAfter`                                                            |
+| `Expiry_Date`       | Certificate expiry timestamp (UTC)                                               |
 | `Expiry_Status`     | **Healthy** (≥90 days) · **Warning** (30–89) · **Critical** (<30) · **Expired** |
-| `Error`             | Connection or TLS error message (empty on success)                          |
+| `Error`             | Connection or TLS error message (empty on success)                               |
 
-**Expiry color coding:**
-
-| Status       | Cell color  |
-| ------------ | ----------- |
-| 🟢 Healthy   | Green       |
-| 🟡 Warning   | Yellow      |
-| 🟠 Critical  | Orange      |
-| 🔴 Expired   | Red         |
-| ⚫ N/A       | Grey        |
+The CSV can be opened directly in Excel, imported into any SIEM, or filtered with standard tools (`grep`, `awk`, `pandas`).
 
 ---
 
@@ -218,12 +198,12 @@ www.example.com
 > [!WARNING]
 > `community.crypto.get_certificate` accepts any server certificate by default. Run only against **systems and networks you own or are explicitly authorized to test.**
 
-| Topic             | Notes                                                                              |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| ⏱️ **Runtime**    | Large lists multiply `connect_timeout` — plan wall-clock time accordingly          |
-| 🔀 **Inspection** | Corporate proxies may replace certs; issuer may reflect the proxy, not the origin  |
-| 🌐 **SNI**        | Hostnames are used for TLS SNI — matches typical browser behavior                  |
-| 🔍 **Reverse DNS**| PTR lookups use a 2-second timeout per IP; unreachable DNS servers slow the report |
+| Topic             | Notes                                                                             |
+| ----------------- | --------------------------------------------------------------------------------- |
+| ⏱️ **Runtime**    | Large lists multiply `connect_timeout` — plan wall-clock time accordingly         |
+| 🔀 **Inspection** | Corporate proxies may replace certs; issuer may reflect the proxy, not the origin |
+| 🌐 **SNI**        | Hostnames are used for TLS SNI — matches typical browser behavior                 |
+| 🕐 **Timezone**   | Days remaining is computed relative to the Ansible control node's local clock     |
 
 ---
 
@@ -249,15 +229,13 @@ Use and adapt for your organization **as needed**. **No warranty** implied.
 
 ---
 
-### *Scan the fleet. Ship the spreadsheet.*
+### *Scan the fleet. Ship the CSV.*
 
 **Made for operators who want answers in a spreadsheet — fast.**
 
-Not another pane to babysit — an **XLSX you can filter, pivot, and attach to a ticket.**
+Not another pane to babysit — a **CSV you can filter, pivot, and attach to a ticket.**
 
-| 🔐                | 📊                      | ⚡                                 |
-| ----------------- | ----------------------- | ---------------------------------- |
-| **TLS** inventory | **XLSX** out of the box | **One** playbook, no custom agents |
+**TLS** inventory · **CSV** out of the box · **one** playbook, no extra packages
 
 `**[amrmarey/cert-scan](https://github.com/amrmarey/cert-scan)**`
 

@@ -9,7 +9,7 @@
     default_port: 443
     connect_timeout: 3
     output_dir: "{{ playbook_dir }}/output"
-    report_path: "{{ output_dir }}/cert_scan_{{ now(fmt='%Y%m%d_%H%M%S') }}.xlsx"
+    report_path: "{{ output_dir }}/cert_scan_{{ now(fmt='%Y%m%d_%H%M%S') }}.csv"
 
   tasks:
     - name: Ensure output directory exists
@@ -17,11 +17,6 @@
         path: "{{ output_dir }}"
         state: directory
         mode: "0755"
-
-    - name: Ensure openpyxl is installed
-      ansible.builtin.pip:
-        name: openpyxl
-        state: present
 
     - name: Read asset list
       ansible.builtin.slurp:
@@ -39,53 +34,26 @@
         host: "{{ item.address }}"
         port: "{{ item.port }}"
         timeout: "{{ connect_timeout }}"
+        asn1_base64: true
       loop: "{{ assets }}"
       loop_control:
         label: "{{ item.address }}:{{ item.port }}"
       register: cert_results
       ignore_errors: true
 
-    - name: Build raw scan data
-      ansible.builtin.set_fact:
-        scan_data: >-
-          {{ scan_data | default([]) + [{
-            'address':          item.item.address,
-            'port':             item.item.port,
-            'failed':           item.failed | bool,
-            'issuer':           item.issuer           | default({}),
-            'serial_number':    item.serial_number    | default(0),
-            'subject_alt_name': item.subject_alt_name | default([]),
-            'not_after':        item.not_after        | default(''),
-            'not_before':       item.not_before       | default(''),
-            'msg':              item.msg              | default('')
-          }] }}
+    - name: Parse certificate details for SAN extraction
+      community.crypto.x509_certificate_info:
+        content: "{{ item.cert }}"
       loop: "{{ cert_results.results }}"
       loop_control:
         label: "{{ item.item.address }}:{{ item.item.port }}"
+      when: not (item.failed | bool)
+      register: cert_info_results
 
-    - name: Save scan data for report generation
-      ansible.builtin.copy:
-        content: "{{ scan_data | to_nice_json }}"
-        dest: "{{ output_dir }}/_scan_data.json"
-
-    - name: Generate XLSX report
-      ansible.builtin.command:
-        argv:
-          - "{{ ansible_python_interpreter | default('python3') }}"
-          - "{{ playbook_dir }}/scripts/generate_report.py"
-          - "{{ output_dir }}/_scan_data.json"
-          - "{{ report_path }}"
-      register: report_result
-      changed_when: true
-
-    - name: Remove temporary scan data file
-      ansible.builtin.file:
-        path: "{{ output_dir }}/_scan_data.json"
-        state: absent
-
-    - name: Show certificate summary
-      ansible.builtin.debug:
-        msg: "{{ report_result.stdout_lines }}"
+    - name: Write CSV report
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/templates/cert_report.csv.j2"
+        dest: "{{ report_path }}"
 
     - name: Show output path
       ansible.builtin.debug:
