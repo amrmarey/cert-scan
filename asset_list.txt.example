@@ -1,0 +1,21 @@
+# One IPv4/IPv6 address or DNS hostname (FQDN) per line. Blank lines and # comments are ignored.
+
+# IPv6 literals may use brackets, e.g. [2001:db8::1]
+
+# Only IP Address is meaning that https is default port 443
+# IP Address with port like 1.2.3.4:8000 this means that scan will use defined port to scan  
+
+192.168.1.1
+
+192.168.1.2
+
+10.0.0.50:8080
+
+google.com
+
+www.msn.com
+
+192.168.108.134
+github.com
+www.yahoo.com
+
