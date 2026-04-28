@@ -2,6 +2,7 @@
 """Generate a styled XLSX certificate inventory report from scan JSON data."""
 
 import json
+import socket
 import sys
 from datetime import datetime, timezone
 
@@ -11,10 +12,12 @@ from openpyxl.utils import get_column_letter
 
 HEADERS = [
     "Asset_IP_Add",
+    "Hostname",
     "Port",
     "HTTPS",
     "Cert_Issuer",
     "Serial_Number",
+    "Serial_Hex",
     "Subject_Alt_Names",
     "Days_Remaining",
     "Expiry_Date",
@@ -24,10 +27,12 @@ HEADERS = [
 
 COL_WIDTHS = {
     "Asset_IP_Add":      22,
+    "Hostname":          30,
     "Port":               8,
     "HTTPS":              8,
     "Cert_Issuer":       48,
-    "Serial_Number":     30,
+    "Serial_Number":     32,
+    "Serial_Hex":        30,
     "Subject_Alt_Names": 58,
     "Days_Remaining":    16,
     "Expiry_Date":       24,
@@ -43,6 +48,32 @@ STATUS_STYLES = {
     "N/A":      {"fill": "BFBFBF", "font_color": "000000"},
 }
 
+_DNS_TIMEOUT = 2  # seconds per reverse-DNS lookup
+
+
+def _is_ip(address):
+    for family in (socket.AF_INET, socket.AF_INET6):
+        try:
+            socket.inet_pton(family, address)
+            return True
+        except socket.error:
+            pass
+    return False
+
+
+def reverse_dns(address):
+    """Return PTR hostname for an IP address; empty string for hostnames or failures."""
+    if not _is_ip(address):
+        return ""
+    old_timeout = socket.getdefaulttimeout()
+    try:
+        socket.setdefaulttimeout(_DNS_TIMEOUT)
+        return socket.gethostbyaddr(address)[0]
+    except Exception:
+        return ""
+    finally:
+        socket.setdefaulttimeout(old_timeout)
+
 
 def parse_asn1_date(s):
     if not s:
@@ -50,7 +81,6 @@ def parse_asn1_date(s):
     s = s.strip()
     if s.endswith("Z"):
         return datetime.strptime(s, "%Y%m%d%H%M%SZ").replace(tzinfo=timezone.utc)
-    # Fallback: strip any trailing timezone offset and parse as UTC
     return datetime.strptime(s[:14], "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
 
 
@@ -82,14 +112,25 @@ def format_expiry_date(date_str):
     return dt.strftime("%Y-%m-%d %H:%M UTC") if dt else "N/A"
 
 
+def format_serial_hex(serial_int):
+    if not serial_int:
+        return "N/A"
+    return f"0x{serial_int:X}"
+
+
 def build_row(entry):
+    address = entry["address"]
+    hostname = reverse_dns(address)
+
     if entry.get("failed", True):
         return {
-            "Asset_IP_Add":      entry["address"],
+            "Asset_IP_Add":      address,
+            "Hostname":          hostname,
             "Port":              str(entry["port"]),
             "HTTPS":             "No",
             "Cert_Issuer":       "N/A",
             "Serial_Number":     "N/A",
+            "Serial_Hex":        "N/A",
             "Subject_Alt_Names": "N/A",
             "Days_Remaining":    "N/A",
             "Expiry_Date":       "N/A",
@@ -99,13 +140,16 @@ def build_row(entry):
 
     days = days_remaining(entry.get("not_after", ""))
     sans = entry.get("subject_alt_name") or []
+    serial_int = entry.get("serial_number") or 0
 
     return {
-        "Asset_IP_Add":      entry["address"],
+        "Asset_IP_Add":      address,
+        "Hostname":          hostname,
         "Port":              str(entry["port"]),
         "HTTPS":             "Yes",
         "Cert_Issuer":       format_dn(entry.get("issuer") or {}),
-        "Serial_Number":     str(entry.get("serial_number", "")),
+        "Serial_Number":     str(serial_int) if serial_int else "N/A",
+        "Serial_Hex":        format_serial_hex(serial_int),
         "Subject_Alt_Names": "; ".join(sans),
         "Days_Remaining":    str(days) if days is not None else "N/A",
         "Expiry_Date":       format_expiry_date(entry.get("not_after", "")),
@@ -136,7 +180,7 @@ def write_xlsx(rows, output_path):
         ws.column_dimensions[get_column_letter(col_idx)].width = COL_WIDTHS.get(h, 20)
 
     status_col = HEADERS.index("Expiry_Status") + 1
-    san_col = HEADERS.index("Subject_Alt_Names") + 1
+    san_col    = HEADERS.index("Subject_Alt_Names") + 1
 
     # Data rows
     for row_idx, row in enumerate(rows, start=2):
@@ -170,11 +214,14 @@ def write_xlsx(rows, output_path):
 
 
 def print_summary(rows):
-    print(f"\n{'Asset':<32} {'Port':<6} {'HTTPS':<6} {'Status':<10} {'Days':>6}  Expiry")
-    print("-" * 80)
+    print(
+        f"\n{'Asset':<32} {'Hostname':<28} {'Port':<6} {'Status':<10} {'Days':>6}  Expiry"
+    )
+    print("-" * 96)
     for row in rows:
+        hostname = row["Hostname"] or "-"
         print(
-            f"{row['Asset_IP_Add']:<32} {row['Port']:<6} {row['HTTPS']:<6}"
+            f"{row['Asset_IP_Add']:<32} {hostname:<28} {row['Port']:<6}"
             f" {row['Expiry_Status']:<10} {row['Days_Remaining']:>6}  {row['Expiry_Date']}"
         )
     print()
@@ -190,6 +237,7 @@ def main():
     with open(json_path) as f:
         scan_data = json.load(f)
 
+    print(f"Running reverse DNS lookups for {sum(1 for e in scan_data if _is_ip(e['address']))} IP address(es)...")
     rows = [build_row(entry) for entry in scan_data]
     print_summary(rows)
     write_xlsx(rows, xlsx_path)
