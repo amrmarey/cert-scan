@@ -3,3 +3,4 @@
 *.xlsx
 output/
 Scan-CertRange-temp.ps1
+.claude/
